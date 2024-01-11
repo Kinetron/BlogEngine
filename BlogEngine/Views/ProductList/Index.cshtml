@@ -1,0 +1,361 @@
+﻿@using GearShop.Enums
+@*Страница выбора продуктов. Витрина магазина. Список продуктов.*@
+@{
+	Layout = "~/Views/Shared/_Layout.cshtml";
+	bool isMobile = (bool)ViewData["IsMobile"];
+}
+
+<style>
+	.searchPanel-desktop {
+		padding: 0 0 10px 0;
+	}
+	
+	.searchPanel-mobile {
+		padding: 10px 0 10px 0; 
+	}
+
+	.product-cell{
+		height: 180px!important;   
+	}
+
+	.product-title {
+		height: 80px !important;
+	}
+
+	.loader {
+		text-align: center;
+	}
+
+	.in-basket {
+		color: green!important;
+		box-sizing: border-box;
+		padding: 0 5px 0 5px;
+	}
+
+	.image {
+		padding: 10px;
+		width: 120px;
+		height: 120px;
+	}
+
+	.product-info {
+		height: 120px;
+	}
+
+	.button-buy {
+		padding: 5px;
+		float: right;
+	}
+	
+	.price {
+		padding: 10px;
+		font-weight: bold;
+		font-size: 1.5em;
+	}
+
+	#buy-block{
+		width: 100%;
+		overflow: hidden;
+	}
+
+		#buy-block > div {
+		width: 30%;
+		display: inline-block;
+	}
+
+	.fa-fw {
+		padding-right: 5px;
+	}
+
+	.select-type-product {
+		font-weight: bold!important;color: mediumseagreen;
+	}
+
+	.cursiv-font {
+		font-style: italic;
+	}
+</style>
+
+<div id="mainPanel">
+	<div class="ui-grid">
+		@if (isMobile)
+		{
+			<div class="ui-grid-row">
+				<div class="ui-grid-col-12">
+					<ul id="productTypesControl">
+						<li><h3>Товары</h3></li>
+						<li>
+							<a onClick="ShowcaseScript.productTypeChanged(-1);" id="productType-1" class="select-type-product"><i class="fa fa-fw fa-car"></i> Все товары</a>
+						</li>
+						@foreach (var item in (List<KeyValuePair<int, string>>)ViewData["ProductTypes"])
+						{
+							<li><a onClick="ShowcaseScript.productTypeChanged(@item.Key);" id="@("productType" + item.Key.ToString())">@item.Value</a></li>
+						}
+					</ul>
+				</div>
+			</div>
+		}
+		
+		<div class="ui-grid-row">
+			@if (!isMobile)
+			{
+				<div class="ui-grid-col-2">
+					<ul id="productTypesControl">
+						<li><h3>Товары</h3></li>
+						<li>
+							<a onClick="ShowcaseScript.productTypeChanged(-1);" id="productType-1" class="select-type-product"><i class="fa fa-fw fa-car"></i> Все товары</a>
+						</li>
+						@foreach (var item in (List<KeyValuePair<int, string>>)ViewData["ProductTypes"])
+						{
+							<li><a onClick="ShowcaseScript.productTypeChanged(@item.Key);" id="@("productType" + item.Key.ToString())">@item.Value</a></li>
+						}
+					</ul>
+				</div>
+			}
+			<div class="ui-grid-col-10">
+				<div id="lightboxControl">
+				</div>
+				<div class=@(isMobile ? "searchPanel-mobile" : "searchPanel-desktop")>
+					<input id="searchInput" type="text" />
+					<button id="searchButton" type="button">Поиск</button>
+					<div>
+						<input type="checkbox" name="chk" id="availableCheckBox" value="1" />
+						<label class="ui-widget">В наличии</label>
+					</div>
+				</div>
+				<div id="loaderIndicator" class="loader"><img src="/images/loader.gif"/>Загрузка данных...</div>
+				<div id="tbProductList"></div>
+				<div id="productsPaginator"></div>
+				<label id="recordCountInfo"></label>
+				<div id="localgrid"></div>
+			</div>
+		</div>
+		<br>
+		<div class="ui-grid-row">
+			<div class="ui-grid-col-2"></div>
+			<div class="ui-grid-col-10 cursiv-font">
+				Цены не фиксированные и могут меняться.
+				Действует гибкая система цен.
+				По вопросам регулирования цен обращаться к менеджеру
+			</div>
+		</div>
+		</div>
+</div>
+
+
+<script type="text/javascript">
+$(document).ready(function() {
+		ShowcaseScript.init();
+});
+
+@*Витрина магазина.*@
+const ShowcaseScript = {
+	firstPageIndex: 1,
+
+	currentPage: 1,
+	
+	searchText: '',
+
+	productTypeId: -1,
+
+	@*В наличии.*@
+	available: true,
+	
+	searchParam() {
+		return { currentPage: this.currentPage, searchText: this.searchText, productTypeId: this.productTypeId, available: this.available };
+	},
+	
+	setCurrentPage(page) {
+		this.currentPage = page;
+	},
+		
+	init() {
+		$('#productTypesControl').puimenu();
+		$('#mainPanel').puipanel();
+		$('#searchInput').puiinputtext();
+
+		$('#tbProductList').puidatagrid({
+			header: 'Список товаров',
+			datasource: function(callback) {
+				$.ajax({
+					type: "GET",
+					url: '@Url.Action("GetProductList", "ProductList")',
+					data: ShowcaseScript.searchParam(),
+					dataType: "json",
+					beforeSend: function() {
+						$('#loaderIndicator').show();
+					},
+					error: function(error) {
+						$('#loaderIndicator').hide();
+
+						CommonScript.showMessage('error', 'Ошибка', 'Ошибка получения данных.');
+					},
+					context: this,
+					success: function(response) {
+						$('#loaderIndicator').hide();
+						callback.call(this, response);
+					}
+				});
+			},
+			content: function(product) {
+				return ShowcaseScript.createProductCell(product);
+			}
+		});
+
+		$('#searchButton').puibutton({
+			click: function(event) {
+				ShowcaseScript.searchByText($('#searchInput').val());
+			}
+		});
+
+		$("#searchInput").on('keyup', function (e) {
+
+			if (e.key === 'Enter' || e.keyCode === 13) {
+				ShowcaseScript.searchByText($('#searchInput').val());
+			}
+
+			if ((e.key === 'Backspace' || e.keyCode === 8) && $('#searchInput').val().length === 0) {
+				ShowcaseScript.searchByText('');
+			}
+		});
+
+		$('#productsPaginator').puipaginator({
+			rows: "9", @*Количество товара на страницу*@
+			paginate: function(event, state) {
+				ShowcaseScript.setCurrentPage(state.page + 1);
+				$('#tbProductList').puidatagrid('reload');
+			}
+		});
+
+		this.updatePaginator();
+
+		$('#lightboxControl').puilightbox(
+			{
+					iframe: true
+			}
+		);
+			
+		$('#availableCheckBox').puicheckbox();
+		$('#availableCheckBox').puicheckbox('check');
+
+		$('#availableCheckBox').puicheckbox({
+			change: function(event, checked) {
+				@*От контрола получаем или true или object*@
+				let available = false;
+				if (checked == true) available = true;
+			
+				ShowcaseScript.productAvailableChanged(available);
+			}});
+	},
+	
+	@*Обновляет данные пейдженатора-количество строк и страниц.*@
+	updatePaginator() {
+		$.ajax({
+			type: "GET",
+			url: '/ProductList/GetPaginateData',
+			data: ShowcaseScript.searchParam(),
+			dataType: "json",
+			error: function (error) {
+				console.log(error);
+			},
+			context: this,
+			success: function (response) {
+				$('#recordCountInfo').text(`Найдено ${response.totalRecords} товаров`);
+				$('#productsPaginator').puipaginator('setTotalRecords', response.totalRecords);
+				$('#productsPaginator').puipaginator('setPage',  0, false);
+			}
+		});
+	},
+	
+	@*Поиск по названию товара. like*@
+	searchByText(text) {
+		ShowcaseScript.currentPage = 1;
+		ShowcaseScript.searchText = text;
+		ShowcaseScript.updateProductList();
+	},
+
+	updateProductList() {
+		$('#tbProductList').puidatagrid('reload');
+		this.updatePaginator();
+	},
+
+	@*Фильтр по типам продуктов.*@
+	productTypeChanged(typeId) {
+		$(`#productType${this.productTypeId}`).removeClass("select-type-product");
+		ShowcaseScript.productTypeId = typeId;
+		$('#searchInput').val('');
+		ShowcaseScript.searchText = '';
+
+		$(`#productType${typeId}`).addClass("select-type-product");
+		this.updateProductList();
+	},
+
+	@*Фильтр по наличию на складе.*@
+	productAvailableChanged(available) {
+		ShowcaseScript.available = available;
+		this.updateProductList();
+	},
+
+	@*Купить товар.*@
+	buy(productId, productName, cost, imageName) {
+		
+		$('#bay' + productId).text('В корзине');
+		$('#bay' + productId).addClass('in-basket');
+
+		let product = { id: productId, name: productName, cost: cost, imageName: imageName };
+		CommonScript.readLastBasketIfEmpty(); @*Если перейти в магазин корзина очистится – считываем сохраненное значение(если не корзина пуста).*@
+		CommonScript.basket.push(product);
+		CommonScript.setBasketToLocal();
+
+		CommonScript.showMessage('info', 'Корзина', `Товар ${productName} добавлен в корзину.`);
+	},
+
+	createAvailableHtmlBlock(amount) {
+
+		switch (amount) {
+			case @((int)ProductThresholdEnum.Empty):
+				return '<div style="color:red;">Нет</div>';
+				
+			case @((int)ProductThresholdEnum.NotEnough):
+				return '<div style="color:hotpink;">Мало</div>';
+
+			case @((int)ProductThresholdEnum.Enough):
+				return '<div style="color:green;">Достаточно</div>';
+
+			case @((int)ProductThresholdEnum.Lot):
+				return '<div style="color:mediumseagreen;">Много</div>';
+
+			default:
+				return '<div style="color:mediumseagreen;">Много</div>';
+		}
+	},
+
+	@*html отображаемой ячейки.*@
+	createProductCell(product) {
+		@*переделать на шаблон!!!*@
+		let html = `<div class="ui-panel ui-widget ui-widget-content ui-corner-all product-cell">
+						  <div class="product-info">
+											<img align="left" src="/productImages/${product.imageName}" class="image" onclick="ShowcaseScript.imageClick('${product.imageName}');">
+							<div>${product.name}</div>									
+						  </div>
+						  <div id="buy-block">
+								  <div class="price"> ${product.cost}&nbsp;р</div>
+										${this.createAvailableHtmlBlock(product.amount)}
+								<div>
+									<button id="buy${product.id}" type="button" onClick="ShowcaseScript.buy(${product.id}, '${product.name}', '${product.cost}', '${product.imageName}');"
+									class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only button-buy">
+										<i class="fa fa-fw fa-shopping-cart"></i>Купить</button>
+								</div>					
+						 </div>
+					</div>`;
+
+		return html;
+	},
+
+	imageClick(name) {
+		event.stopPropagation();
+		$('#lightboxControl').puilightbox('showURL', { src: `/productImages/${name}` });
+	},
+}
+</script>
+	 

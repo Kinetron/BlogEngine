@@ -1,0 +1,21 @@
+﻿@using GearShop.Models.ViewModels
+@model PageViewModel
+
+
+@*Добавление кнопок редактирования в режиме администрирования.*@
+<div editable-block="true" content-element-name="pageContent" page-id="@Model.Id"></div>
+
+<div class="ui-grid ui-grid-responsive">
+	<div class="ui-grid-row">
+		<div class="ui-grid-col-12">
+			<div id="mainPаnel" class="main-panel">
+				<div id="pageContent">
+					@Html.Raw(Model.PageContent)
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div articles-block="true" page-id="@Model.Id"></div>
+

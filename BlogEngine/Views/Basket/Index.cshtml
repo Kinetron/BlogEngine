@@ -1,0 +1,162 @@
+﻿@*Корзина. Главна страница.*@
+@{
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+.button {
+	height: 20px;
+	width: 20px;
+}
+.label-count {
+	padding: 5px;
+}
+
+	#сreateOrderBlock {
+		padding: 5px 0 0 0;
+	    text-align: right;
+		display: none;
+ }
+</style>
+
+<div id="mainPanel">
+	<div id="tbBasketList"></div>
+	<label id="productQuantityLabel"></label>
+	<div id="сreateOrderBlock">
+		<button id="btnCheckout" type="button">Оформить заказ</button>
+	</div>
+</div>
+
+<script type="text/javascript">
+$(document).ready(function() {
+	BasketScript.Init();
+});
+
+const BasketScript = {
+
+		@*Изменяет количество товара в корзине*@
+		ChangeQuantity(productId, step) {
+			const basket = BasketScript.Backet;
+			const index = basket.findIndex(i => i.id === productId);
+			basket[index].amount += step;
+
+			if (basket[index].amount == -1) basket[index].amount = 0;
+
+			$(`#count${productId}`).text(basket[index].amount);
+			this.OnChangeBasketData();
+		},
+
+		@*Удаляет продукт из списка.*@
+		RemoveProduct(productId) {
+			const basket = BasketScript.Backet;
+			basket.splice(basket.findIndex(i => i.id == productId), 1);
+			$('#tbBasketList').puidatatable('reload');
+			this.OnChangeBasketData();
+		},
+
+		@*Формирует ячейку с данными о количестве товаре.*@
+		CreateCountCell(rowData) {
+			const btnAdd = $(`<button class="button" onClick="BasketScript.ChangeQuantity(${rowData.id}, 1)"></button>`).puibutton({
+				icon: 'fa-plus'
+			}).prop('outerHTML');
+
+			const btnRemove = $(`<button class='button'  onClick="BasketScript.ChangeQuantity(${ rowData.id }, -1)"></button>`).puibutton({
+				icon: 'fa-minus'
+			}).prop('outerHTML');
+
+			const text = `<label class="label-count" id="count${rowData.id}">${rowData.amount}</label>`;
+
+			return  btnAdd + text + btnRemove ;
+		},
+
+		Init() {
+			$('#btnCheckout').puibutton({
+			icon: 'fa-shopping-cart',
+				click: () => {
+					const basket = { json: JSON.stringify(BasketScript.Backet) };
+					window.location = '@Url.Action("CreateOrder", "Order")?' + $.param(basket);
+				}
+			});
+		
+			$('#tbBasketList').puidatatable({
+				caption: 'Товары в корзине',
+				emptyMessage: 'Корзина пуста',
+				columns: [
+					{ field: 'name', headerText: 'Товар' },
+					{ field: 'cost', headerText: 'Цена, шт' },
+					{
+					  field: 'amount', headerText: 'Количество',
+					  content: (rowData) => BasketScript.CreateCountCell(rowData)
+					},
+					{ field: '', headerText: '', 
+						content: (rowData) => {
+						return $('<button class="button"></button>').puibutton({
+							icon: 'fa-remove',
+							click: () => BasketScript.RemoveProduct(rowData.productId)
+							});
+						}
+					},
+				],
+				datasource: BasketScript.GetBacketFromStorage(),
+			});
+		},
+
+		StorageBasketKey: 'gearShopBasket',
+
+		@*Текущая корзина.*@
+		Backet: null,
+
+		@*Обработка события обновления данных в корзине. События у грида нет, поэтому обновляем в ручную. Желательно дописать в primeUI событие.*@
+		OnChangeBasketData() {
+			if (this.Backet != null && this.Backet.length > 0) {
+				$('#сreateOrderBlock').show();
+				
+				let totalCost = 0;
+				this.Backet.forEach((item) => {
+					totalCost+= item.cost * item.amount;
+				});
+
+			$('#productQuantityLabel').text(`Товаров ${this.Backet.length} на сумму ${totalCost}`);
+
+			} else {
+				$('#сreateOrderBlock').hide();
+			}
+		},
+
+		@*Возвращает купленные пользователем товары.*@
+		GetBacketFromStorage() {
+
+			if (BasketScript.Backet != null) return BasketScript.Backet;
+			
+		    let basket = localStorage.getItem(BasketScript.StorageBasketKey);
+			if (basket == null){
+				return null;
+			}
+		   basket = JSON.parse(basket);
+			
+
+		   const groupById = basket.reduce((acc, item) => {
+				   const existingIndex = acc.findIndex(el => el.id === item.id);
+
+				   if (existingIndex > -1) {
+						acc[existingIndex].amount += 1;
+				   } else 
+				   {
+					   acc.push({
+						   id: item.id,
+						   name: item.name,
+						   amount: 1,
+						   cost: Number(item.cost)
+					   });
+				   };
+				   return acc;
+			   },
+			   []);
+
+		   BasketScript.Backet = groupById.sort((first, second) => first.name.localeCompare(second.name));
+		   this.OnChangeBasketData();
+		   return BasketScript.Backet;
+		}
+	}
+</script>
+
