@@ -89,27 +89,27 @@
 		}
 
 
-	VK.init({
-		apiId: @vkAppId
-	});
+	// VK.init({
+	// 	apiId: @vkAppId
+	// });
 
-	VK.Widgets.Auth('vk_auth',
-		{
-			onAuth: (data) => {
-				$.ajax({
-					url: '@Url.Action("VkLogin", "Login")',
-					type: "POST",
-					data: { token: JSON.stringify(data)},
-					success: function() {
-						window.location.href = '@Url.Action("Index","ProductList")';
-					},
-					error: function() {
-						CommonScript.showMessage('error', 'Ошибка', 'Ошибка входа.');
-					}
-				}); 
-			}
-		}
-	);
+	// VK.Widgets.Auth('vk_auth',
+	// 	{
+	// 		onAuth: (data) => {
+	// 			$.ajax({
+	// 				url: '@Url.Action("VkLogin", "Login")',
+	// 				type: "POST",
+	// 				data: { token: JSON.stringify(data)},
+	// 				success: function() {
+	// 					window.location.href = '@Url.Action("Index","ProductList")';
+	// 				},
+	// 				error: function() {
+	// 					CommonScript.showMessage('error', 'Ошибка', 'Ошибка входа.');
+	// 				}
+	// 			}); 
+	// 		}
+	// 	}
+	// );
 
 	$(document).ready(function () {
 		

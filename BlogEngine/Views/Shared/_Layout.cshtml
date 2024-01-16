@@ -38,7 +38,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>@ViewData["Title"] - Магазин запчастей</title>
+    <title>@ViewData["Title"] - Все о программировании</title>
     <script src="https://vk.com/js/api/openapi.js?169" type="text/javascript"></script>
 	<link rel="stylesheet" type="text/css" href="~/font-awesome-4.7.0/css/font-awesome.css">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -612,7 +612,7 @@ const PageEditorScript = {
 	addNewsBlock(blockId, pageId) {
 		CommonScript.silentAjax('@Url.Action("GetNewsfeed", "Articles")',
 				'GET',
-				{ pageId: pageId},
+				{},
 				(response) => {
 					PageEditorScript._createNewsList(response, blockId);
 				});

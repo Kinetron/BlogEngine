@@ -68,11 +68,11 @@ namespace GearShop.Controllers.Shop
 		/// Return newsfeed.
 		/// </summary>
 		/// <returns></returns>
-		public async Task<IActionResult> GetNewsfeed(int pageId)
+		public async Task<IActionResult> GetNewsfeed()
 		{
 			var serializerSettings = new JsonSerializerSettings();
 			serializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-			var list = await _gearShopRepository.GetNewsfeed(pageId);
+			var list = await _gearShopRepository.GetNewsfeed();
 			return Ok(JsonConvert.SerializeObject(list, serializerSettings));
 		}
 	}

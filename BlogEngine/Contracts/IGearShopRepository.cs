@@ -122,7 +122,7 @@ namespace GearShop.Contracts
 		/// Return newsfeed.
 		/// </summary>
 		/// <returns></returns>
-		Task<List<ArticleDto>> GetNewsfeed(int pageId);
+		Task<List<ArticleDto>> GetNewsfeed();
 
 		/// <summary>
 		/// Добавляет статью.
