@@ -506,6 +506,7 @@ namespace GearShop.Services.Repository
 				.Select(x=> new Page()
 				{
 					Id = x.Id,
+					Title = x.Title,
 					Content = x.Content
 				})
 				.SingleOrDefaultAsync())
@@ -514,6 +515,7 @@ namespace GearShop.Services.Repository
 			return new ArticleDto()
 			{
 				Id = page.Id,
+				Title = page.Title,
 				Content = page.Content
 			};
 		}

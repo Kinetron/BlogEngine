@@ -26,6 +26,8 @@ namespace GearShop.Controllers.Shop
 				Id = dto.Id,
 				PageContent = dto.Content
 			};
+
+			ViewData["Title"] = dto.Title;
 			return View(model);
 		}
 
@@ -60,6 +62,7 @@ namespace GearShop.Controllers.Shop
 				model.Title = result.Title;
 				model.Content = result.Content;
 			}
+			ViewData["Title"] = model.Title;
 
 			return View(model);
 		}
